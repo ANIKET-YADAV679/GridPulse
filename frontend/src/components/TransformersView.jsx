@@ -90,34 +90,34 @@ export default function TransformersView({ telemetry, onSelectAsset }) {
   });
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto">
+    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto select-none">
       
       {/* Header */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="cyber-card rounded-2xl p-6 border border-cyan-500/25 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <div className="p-2 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-neon-cyan">
               <Layers className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight font-sans">
+            <h2 className="text-lg font-bold text-white tracking-tight font-sans">
               Transformers Fleet
             </h2>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Real-time status, voltage ratio, and Composite Health Index across all substation bays.
           </p>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-[#081122] p-1 rounded-xl border border-slate-800">
           {['ALL', 'HEALTHY', 'WATCH', 'CRITICAL'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                 filter === f
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                  ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 shadow-neon-cyan'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               {f}
@@ -127,19 +127,19 @@ export default function TransformersView({ telemetry, onSelectAsset }) {
       </div>
 
       {/* Fleet Table */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="cyber-card rounded-2xl border border-cyan-500/20 overflow-hidden">
+        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="relative w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search transformer name or tag..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-600"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#091122] border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
             />
           </div>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-400 font-mono">
             Showing {filteredFleet.length} of {fleet.length} Units
           </span>
         </div>
@@ -147,7 +147,7 @@ export default function TransformersView({ telemetry, onSelectAsset }) {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
+              <tr className="bg-[#091122]/90 border-b border-slate-800 text-slate-400 uppercase font-bold text-[10px] tracking-wider">
                 <th className="py-3 px-4">Asset ID &amp; Name</th>
                 <th className="py-3 px-4">Substation Location</th>
                 <th className="py-3 px-4">Specifications</th>
@@ -157,44 +157,44 @@ export default function TransformersView({ telemetry, onSelectAsset }) {
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
+            <tbody className="divide-y divide-slate-800/60 font-sans">
               {filteredFleet.map((t) => {
-                let badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                if (t.status === 'CRITICAL') badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
-                if (t.status === 'WATCH') badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+                let badgeClass = 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50';
+                if (t.status === 'CRITICAL') badgeClass = 'bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-neon-red';
+                if (t.status === 'WATCH') badgeClass = 'bg-amber-950/80 text-amber-300 border-amber-500/50';
 
                 return (
-                  <tr key={t.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3.5 px-4 font-semibold text-slate-800">
+                  <tr key={t.id} className="hover:bg-slate-800/30 transition">
+                    <td className="py-3.5 px-4 font-semibold text-white">
                       <div className="flex items-center gap-2">
                         <span>{t.name}</span>
                         {t.isActiveMonitored && (
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold tracking-tight">
+                          <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[9px] font-bold tracking-tight">
                             LIVE SCADA
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600">
+                    <td className="py-3.5 px-4 text-slate-300">
                       {t.substation}
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-600">
+                    <td className="py-3.5 px-4 font-mono text-slate-400">
                       {t.ratio} • {t.capacity}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-700">
+                    <td className="py-3.5 px-4 text-slate-300">
                       <div className="flex items-center gap-2">
                         <span>{t.loadPct}%</span>
-                        <div className="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-16 bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
-                              t.loadPct > 80 ? 'bg-amber-500' : 'bg-emerald-500'
+                              t.loadPct > 80 ? 'bg-amber-500' : 'bg-cyan-400'
                             }`}
                             style={{ width: `${t.loadPct}%` }}
                           />
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                    <td className="py-3.5 px-4 font-mono font-bold text-white">
                       {t.chi} / 100
                     </td>
                     <td className="py-3.5 px-4">
@@ -205,7 +205,7 @@ export default function TransformersView({ telemetry, onSelectAsset }) {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={onSelectAsset}
-                        className="px-3 py-1 rounded-lg text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 font-semibold text-xs transition inline-flex items-center gap-1"
+                        className="px-3 py-1 rounded-lg text-cyan-300 hover:text-cyan-200 hover:bg-cyan-950/60 border border-transparent hover:border-cyan-500/40 font-semibold text-xs transition inline-flex items-center gap-1"
                       >
                         <span>Diagnostics</span>
                         <ArrowRight className="w-3 h-3" />

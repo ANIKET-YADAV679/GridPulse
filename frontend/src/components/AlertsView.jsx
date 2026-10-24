@@ -2,101 +2,101 @@ import React, { useState } from 'react';
 import {
   Bell,
   AlertTriangle,
-  Clock,
   CheckCircle2,
   Filter,
   Search,
-  Flame,
-  Activity,
-  ArrowRight
+  Check,
+  Clock,
+  ShieldAlert
 } from 'lucide-react';
 
-export default function AlertsView({ telemetry, isDegraded, onOpenFailoverModal }) {
+export default function AlertsView({ telemetry }) {
+  const isCritical = (telemetry?.chi ?? 42) < 60;
   const [filter, setFilter] = useState('ALL');
 
-  const alerts = [
+  const allAlerts = [
     {
-      id: 'ALT-901',
-      title: 'Transformer T-248 High Winding Temperature Hotspot (87°C)',
+      id: 101,
+      title: 'High Winding Temperature Hotspot (T_wti > 110 °C)',
       severity: 'CRITICAL',
-      asset: 'Transformer T-248 (Bay 01)',
-      time: '1h ago',
-      desc: 'Severe thermal divergence: WTI 114°C vs OTI 82°C (Δθ = 32°C). High risk of dielectric breakdown.',
-      actionable: true
+      asset: 'TR-017 (East Grid)',
+      time: 'Just now',
+      desc: 'Winding temperature exceeds continuous thermal envelope. Immediate load relief or tie failover advised.',
+      status: 'ACTIVE'
     },
     {
-      id: 'ALT-902',
-      title: 'Current Harmonic THD Exceeds IEEE 519 Standard (13.8%)',
+      id: 102,
+      title: 'Harmonic Current Distortion Limit Exceeded (THD > 5%)',
       severity: 'CRITICAL',
-      asset: 'Transformer T-248 (Bay 01)',
-      time: '45m ago',
-      desc: 'Non-linear load harmonic breakdown detected on secondary busbar A.',
-      actionable: true
+      asset: 'TR-017 (East Grid)',
+      time: '45s ago',
+      desc: '5th and 7th harmonic content surged to 12.8% on 11kV busbar A.',
+      status: 'ACTIVE'
     },
     {
-      id: 'ALT-903',
-      title: 'Line L-103 Phase B Voltage Fluctuation Detected (±4.2%)',
+      id: 103,
+      title: 'Reactive Power Q/P Ratio Sagging (PF < 0.82)',
       severity: 'WARNING',
-      asset: 'Line L-103 (400 kV Corridor)',
-      time: '3h ago',
-      desc: 'Transient load surge causing sub-harmonic oscillatory resonance.',
-      actionable: false
+      asset: 'TR-017 (East Grid)',
+      time: '5m ago',
+      desc: 'Heavy reactive displacement detected. Capacitor bank stepping required.',
+      status: 'ACKNOWLEDGED'
     },
     {
-      id: 'ALT-904',
-      title: 'T-112 Conservator Tank Oil Level Dropping (-8%)',
-      severity: 'WARNING',
-      asset: 'Transformer T-112 (East Sector)',
-      time: '5h ago',
-      desc: 'Slow valve seepage suspected. Maintenance dispatch team alerted.',
-      actionable: false
+      id: 104,
+      title: 'Scheduled Transformer Oil Sampling Due',
+      severity: 'INFO',
+      asset: 'TR-021 (Central Depot)',
+      time: '2h ago',
+      desc: 'Routine quarterly laboratory dissolved gas analysis scheduled for next Tuesday.',
+      status: 'ACKNOWLEDGED'
     },
     {
-      id: 'ALT-905',
-      title: 'Substation S-102 Bus Synchronizer Calibrated',
+      id: 105,
+      title: 'Substation Incomer Feeder Frequency Normal (50.01 Hz)',
       severity: 'RESOLVED',
-      asset: 'Substation S-102',
-      time: '12h ago',
-      desc: 'Automatic synchro-check relay 25A verified operational.',
-      actionable: false
+      asset: 'Substation Bay 01',
+      time: '5h ago',
+      desc: 'Interstate utility tie line frequency normalized after transient deviation.',
+      status: 'RESOLVED'
     }
   ];
 
-  const filtered = alerts.filter(a => {
-    if (filter === 'CRITICAL' && a.severity !== 'CRITICAL') return false;
-    if (filter === 'WARNING' && a.severity !== 'WARNING') return false;
-    if (filter === 'RESOLVED' && a.severity !== 'RESOLVED') return false;
+  const filtered = allAlerts.filter(a => {
+    if (filter === 'ACTIVE') return a.status === 'ACTIVE';
+    if (filter === 'CRITICAL') return a.severity === 'CRITICAL';
+    if (filter === 'RESOLVED') return a.status === 'RESOLVED';
     return true;
   });
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-[1600px] mx-auto select-none">
+    <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto select-none">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400">
-            <Bell className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white font-mono tracking-tight">
-              Incident Triage &amp; Alert Command
+      <div className="cyber-card rounded-2xl p-6 border border-cyan-500/25 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-500/40 shadow-neon-cyan">
+              <Bell className="w-5 h-5" />
+            </div>
+            <h2 className="text-lg font-bold text-white tracking-tight font-sans">
+              Substation Alerts &amp; Event Stream
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Prioritized grid events, physics anomaly alarms, and protective relay triggers.
-            </p>
           </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Real-time SCADA alarm logs, threshold crossings, and AI diagnostic alerts.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {['ALL', 'CRITICAL', 'WARNING', 'RESOLVED'].map(f => (
+        <div className="flex items-center gap-2 bg-[#081122] p-1 rounded-xl border border-slate-800">
+          {['ALL', 'ACTIVE', 'CRITICAL', 'RESOLVED'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                 filter === f
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-neon-rose/30'
-                  : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+                  ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 shadow-neon-cyan'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               {f}
@@ -105,52 +105,52 @@ export default function AlertsView({ telemetry, isDegraded, onOpenFailoverModal 
         </div>
       </div>
 
-      {/* Alert Cards List */}
-      <div className="rounded-2xl bg-slate-900/80 border border-slate-800 shadow-2xl backdrop-blur-md overflow-hidden divide-y divide-slate-800/80">
-        {filtered.map(a => {
-          let badgeClass = 'bg-slate-950 text-slate-400 border-slate-800';
-          if (a.severity === 'CRITICAL') badgeClass = 'bg-rose-950 text-rose-400 border-rose-500/50 shadow-neon-rose/30';
-          if (a.severity === 'WARNING') badgeClass = 'bg-amber-950 text-amber-400 border-amber-500/40';
-          if (a.severity === 'RESOLVED') badgeClass = 'bg-emerald-950 text-emerald-400 border-emerald-500/40';
+      {/* Alerts Table */}
+      <div className="cyber-card rounded-2xl border border-cyan-500/20 overflow-hidden">
+        <div className="divide-y divide-slate-800/80">
+          {filtered.map(alert => {
+            let badgeClass = 'bg-slate-800/80 text-slate-300 border-slate-700';
+            if (alert.severity === 'CRITICAL') badgeClass = 'bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-neon-red';
+            if (alert.severity === 'WARNING') badgeClass = 'bg-amber-950/80 text-amber-300 border-amber-500/50';
+            if (alert.severity === 'RESOLVED') badgeClass = 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50';
 
-          return (
-            <div key={a.id} className="p-4 hover:bg-slate-800/40 transition flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className={`p-2 rounded-xl border flex-shrink-0 mt-0.5 ${badgeClass}`}>
-                  {a.severity === 'CRITICAL' ? <AlertTriangle className="w-5 h-5 text-rose-400 animate-pulse" /> : <Clock className="w-5 h-5 text-amber-400" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2.5 mb-1 font-mono">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${badgeClass}`}>
-                      {a.severity}
-                    </span>
-                    <span className="text-xs text-white font-bold">{a.asset}</span>
-                    <span className="text-slate-600">•</span>
-                    <span className="text-xs text-slate-400">{a.time}</span>
+            return (
+              <div key={alert.id} className="p-4.5 hover:bg-slate-800/30 transition flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className={`mt-0.5 p-2 rounded-xl border flex-shrink-0 ${badgeClass}`}>
+                    {alert.severity === 'CRITICAL' ? <AlertTriangle className="w-4 h-4 text-rose-400" /> : <Clock className="w-4 h-4 text-cyan-400" />}
                   </div>
-                  <h4 className="text-sm font-bold text-slate-100 font-sans">{a.title}</h4>
-                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed font-sans">{a.desc}</p>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${badgeClass}`}>
+                        {alert.severity}
+                      </span>
+                      <span className="text-xs font-bold text-white">
+                        {alert.asset}
+                      </span>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        {alert.time}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-200">
+                      {alert.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {alert.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 self-end md:self-center font-mono">
-                {a.actionable ? (
-                  <button
-                    onClick={onOpenFailoverModal}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-rose-950"
-                  >
-                    <span>Failover Interlock</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <button className="px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white text-xs">
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button className="px-3 py-1.5 rounded-lg bg-[#0e172e] hover:bg-cyan-950/60 border border-slate-700/80 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 text-xs font-medium transition">
                     Acknowledge
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
     </div>

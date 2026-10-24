@@ -1,32 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import OverviewView from './components/OverviewView';
-import GridMapView from './components/GridMapView';
-import AssetsView from './components/AssetsView';
+import HealthAssessment from './components/HealthAssessment';
+import GridFailover from './components/GridFailover';
+import MaintenanceSpares from './components/MaintenanceSpares';
+import LiveMonitoring from './components/LiveMonitoring';
+import HomeOverview from './components/HomeOverview';
+import TransformersView from './components/TransformersView';
 import AlertsView from './components/AlertsView';
-import PredictionsView from './components/PredictionsView';
 import ReportsView from './components/ReportsView';
-import SettingsView from './components/SettingsView';
-import FailoverModal from './components/FailoverModal';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('overview'); // Default: Overview mission control
+  // Navigation active tab
+  const [activeTab, setActiveTab] = useState('overview'); // default to Overview dashboard matching screenshot
+
+  // Telemetry & Streaming State
   const [telemetry, setTelemetry] = useState(null);
   const [history, setHistory] = useState([]);
   const [gridTopology, setGridTopology] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isFailoverModalOpen, setIsFailoverModalOpen] = useState(false);
   const [isInterlockExecuting, setIsInterlockExecuting] = useState(false);
   const [signoffSuccess, setSignoffSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const timerRef = useRef(null);
 
-  // Initial fetch
+  // Initial data load
   useEffect(() => {
     fetchInitialData();
     return () => {
@@ -34,7 +37,7 @@ export default function App() {
     };
   }, []);
 
-  // Polling loop when stream is active
+  // Polling loop when isPlaying is active
   useEffect(() => {
     if (isPlaying) {
       timerRef.current = setInterval(() => {
@@ -49,6 +52,7 @@ export default function App() {
   }, [isPlaying]);
 
   const fetchInitialData = async () => {
+    setLoading(true);
     try {
       const [resCurrent, resTopology] = await Promise.all([
         fetch(`${API_BASE}/api/telemetry/current`),
@@ -69,9 +73,9 @@ export default function App() {
       }
       setError(null);
     } catch (err) {
-      console.warn('Backend connecting or offline:', err);
-      setError('Backend API unreachable at ' + API_BASE + ' — Operating in standalone demo mode.');
-      // Fallback baseline telemetry
+      console.warn('Backend not responding yet:', err);
+      setError('Cannot connect to GridPulse backend server at ' + API_BASE);
+      // Fallback state so UI is immediately visible even if backend is starting
       setTelemetry({
         step: 0,
         voltage_kv: 11.02,
@@ -83,20 +87,25 @@ export default function App() {
         p_mw: 4.5,
         q_mvar: 1.2,
         q_p_ratio: 0.267,
-        chi: 94.2,
+        chi: 98.4,
         status: 'NORMAL',
-        status_color: '#10b981',
+        status_color: '#059669',
+        sigma_thd: 0.0,
+        sigma_delta_theta: 0.8,
+        sigma_qp: 3.1,
         is_anomaly: false,
         anomaly_score: 0.124,
         interlock_executed: false
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const advanceStep = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/telemetry/next`);
-      if (!res.ok) throw new Error('API error on next step');
+      if (!res.ok) throw new Error('API error on advance step');
       const data = await res.json();
       setTelemetry(data);
       setHistory(prev => {
@@ -106,7 +115,7 @@ export default function App() {
       fetchGridTopology();
       setError(null);
     } catch (err) {
-      console.error('Error streaming telemetry:', err);
+      console.error('Error fetching next telemetry:', err);
       setIsPlaying(false);
     }
   };
@@ -123,7 +132,7 @@ export default function App() {
     }
   };
 
-  const handleInjectDegradation = async () => {
+  const handleInjectFault = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/simulation/fault-inject`, { method: 'POST' });
       const data = await res.json();
@@ -133,7 +142,7 @@ export default function App() {
       setError(null);
     } catch (err) {
       console.error('Fault injection error:', err);
-      // Local fallback
+      // Local fallback simulation
       setTelemetry(prev => ({
         ...prev,
         step: 157,
@@ -148,7 +157,10 @@ export default function App() {
         q_p_ratio: 0.82,
         chi: 38.6,
         status: 'CRITICAL',
-        status_color: '#ef4444',
+        status_color: '#e11d48',
+        sigma_thd: 90.0,
+        sigma_delta_theta: 100.0,
+        sigma_qp: 100.0,
         is_anomaly: true,
         anomaly_score: -0.214,
         interlock_executed: false
@@ -179,9 +191,12 @@ export default function App() {
         p_mw: 4.5,
         q_mvar: 1.2,
         q_p_ratio: 0.267,
-        chi: 94.2,
+        chi: 98.4,
         status: 'NORMAL',
-        status_color: '#10b981',
+        status_color: '#059669',
+        sigma_thd: 0.0,
+        sigma_delta_theta: 0.8,
+        sigma_qp: 3.1,
         is_anomaly: false,
         anomaly_score: 0.124,
         interlock_executed: false
@@ -212,112 +227,126 @@ export default function App() {
     }
   };
 
-  const handleSignoffDispatch = async (operatorName) => {
+  const handleSignoffTicket = async (operatorName) => {
     try {
-      const ticketId = telemetry?.spare_dispatch?.ticket_id || 'GP-DISPATCH-TR01-EMERGENCY';
+      const ticketId = telemetry?.spare_dispatch?.ticket_id || 'GP-WO-2025-0892';
       const res = await fetch(`${API_BASE}/api/spares/signoff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticket_id: ticketId,
           operator_name: operatorName,
-          notes: 'Emergency low-bed transporter authorized for replacement asset TX-SPARE-01'
+          notes: 'Emergency road transit dispatched via low-bed transporter'
         })
       });
       if (res.ok) {
         setSignoffSuccess(true);
       }
     } catch (err) {
-      console.error('Signoff dispatch error:', err);
+      console.error('Signoff error:', err);
       setSignoffSuccess(true);
     }
   };
 
-  const chi = telemetry ? Math.round(telemetry.chi) : 94;
-  const isDegraded = chi < 60 || telemetry?.status === 'CRITICAL' || telemetry?.status === 'WARNING';
+  const chi = telemetry ? Math.round(telemetry.chi) : 42;
+  const isCritical = chi < 60;
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 flex font-sans antialiased overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans antialiased selection:bg-cyan-500/25 selection:text-cyan-200">
       
-      {/* 1. Left Fixed Sidebar */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        alertCount={isDegraded ? 4 : 3}
-        isDegraded={isDegraded}
+      {/* 1. Global Full-Width Header */}
+      <Header
+        telemetry={telemetry}
+        isPlaying={isPlaying}
+        setIsPlaying={setIsPlaying}
+        onInjectFault={handleInjectFault}
+        onReset={handleReset}
+        playbackIndex={telemetry?.playback_index ?? telemetry?.step ?? 0}
+        isCritical={isCritical}
+        alertCount={3}
       />
 
-      {/* 2. Main Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#020617]">
+      {/* Backend Offline Warning Banner if needed */}
+      {error && (
+        <div className="bg-[#1e130c] border-b border-amber-500/40 px-6 py-2 flex items-center justify-between text-xs text-amber-300">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <span>{error} — Connected to offline real-time SCADA simulation model.</span>
+          </div>
+          <button
+            onClick={fetchInitialData}
+            className="text-cyan-400 hover:text-cyan-300 font-semibold underline flex items-center gap-1 transition"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Retry Sync</span>
+          </button>
+        </div>
+      )}
+
+      {/* 2. Main Body Container: Sidebar + Content */}
+      <div className="flex-1 flex overflow-hidden">
         
-        {/* Top Header Bar */}
-        <Header
-          telemetry={telemetry}
-          isPlaying={isPlaying}
-          setIsPlaying={setIsPlaying}
-          onInjectDegradation={handleInjectDegradation}
-          onReset={handleReset}
-          isDegraded={isDegraded}
-          onOpenFailoverModal={() => setIsFailoverModalOpen(true)}
+        {/* Left Persistent Dark Cyber Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          alertCount={3}
+          isCritical={isCritical}
         />
 
-        {/* Backend Warning Banner if offline */}
-        {error && (
-          <div className="bg-amber-950/40 border-b border-amber-500/30 px-6 py-2 flex items-center justify-between text-xs font-mono text-amber-300">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-            <button
-              onClick={fetchInitialData}
-              className="text-cyan-400 hover:text-cyan-300 underline font-semibold flex items-center gap-1"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Retry</span>
-            </button>
-          </div>
-        )}
-
-        {/* Dynamic Main Views */}
-        <main className="flex-1 overflow-y-auto pb-12">
-          {activeTab === 'overview' && (
-            <OverviewView
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto bg-[#070b14] pb-14">
+          
+          {(activeTab === 'overview' || activeTab === 'home') && (
+            <HomeOverview
               telemetry={telemetry}
-              history={history}
-              isDegraded={isDegraded}
-              onOpenFailoverModal={() => setIsFailoverModalOpen(true)}
               setActiveTab={setActiveTab}
             />
           )}
 
-          {activeTab === 'grid-map' && (
-            <GridMapView
+          {(activeTab === 'grid-map' || activeTab === 'failover') && (
+            <GridFailover
               telemetry={telemetry}
-              isDegraded={isDegraded}
-              onOpenFailoverModal={() => setIsFailoverModalOpen(true)}
+              gridTopology={gridTopology}
+              onExecuteInterlock={handleExecuteInterlock}
+              isExecuting={isInterlockExecuting}
             />
           )}
 
-          {activeTab === 'assets' && (
-            <AssetsView
+          {(activeTab === 'assets' || activeTab === 'transformers') && (
+            <TransformersView
               telemetry={telemetry}
-              isDegraded={isDegraded}
-              onOpenFailoverModal={() => setIsFailoverModalOpen(true)}
+              onSelectAsset={() => setActiveTab('predictions')}
             />
           )}
 
           {activeTab === 'alerts' && (
             <AlertsView
               telemetry={telemetry}
-              isDegraded={isDegraded}
-              onOpenFailoverModal={() => setIsFailoverModalOpen(true)}
             />
           )}
 
-          {activeTab === 'predictions' && (
-            <PredictionsView
+          {(activeTab === 'predictions' || activeTab === 'health') && (
+            <HealthAssessment
               telemetry={telemetry}
-              isDegraded={isDegraded}
+              history={history}
+              onNavigateFailover={() => setActiveTab('grid-map')}
+              onNavigateMaintenance={() => setActiveTab('maintenance')}
+            />
+          )}
+
+          {activeTab === 'live' && (
+            <LiveMonitoring
+              telemetry={telemetry}
+              history={history}
+            />
+          )}
+
+          {activeTab === 'maintenance' && (
+            <MaintenanceSpares
+              telemetry={telemetry}
+              onSignoffTicket={handleSignoffTicket}
+              signoffSuccess={signoffSuccess}
             />
           )}
 
@@ -328,24 +357,65 @@ export default function App() {
           )}
 
           {activeTab === 'settings' && (
-            <SettingsView />
+            <div className="p-8 max-w-4xl mx-auto flex flex-col gap-6">
+              <div className="cyber-card rounded-2xl p-6 border border-cyan-500/25">
+                <h3 className="text-lg font-bold text-white mb-1">
+                  GridPulse AI System Configuration
+                </h3>
+                <p className="text-xs text-slate-400 mb-6">
+                  SCADA polling rates, predictive thresholds, and automated interlock parameters.
+                </p>
+
+                <div className="space-y-4 text-xs">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#081122] border border-slate-800">
+                    <div>
+                      <span className="font-bold text-white block">SCADA Sampling Frequency</span>
+                      <span className="text-slate-400 text-[11px]">Real-time telemetry stream interval</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-lg bg-cyan-950/80 text-cyan-300 font-mono font-bold border border-cyan-500/30">
+                      1000 ms (1 Hz)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#081122] border border-slate-800">
+                    <div>
+                      <span className="font-bold text-white block">Isolation Forest Anomaly Threshold</span>
+                      <span className="text-slate-400 text-[11px]">Dynamic outlier contamination cutoff</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-lg bg-cyan-950/80 text-cyan-300 font-mono font-bold border border-cyan-500/30">
+                      Score &lt; -0.05
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#081122] border border-slate-800">
+                    <div>
+                      <span className="font-bold text-white block">Automated Interlock Permission</span>
+                      <span className="text-slate-400 text-[11px]">Requires Human Operator Sign-off before breaker actuation</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-lg bg-emerald-950/80 text-emerald-300 font-semibold border border-emerald-500/30">
+                      Enforced (Human-in-the-loop)
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#081122] border border-slate-800">
+                    <div>
+                      <span className="font-bold text-white block">AI Core Model</span>
+                      <span className="text-slate-400 text-[11px]">Physics-Guided Composite Health Index + SHAP Explainability</span>
+                    </div>
+                    <span className="px-3 py-1 rounded-lg bg-purple-950/80 text-purple-300 font-semibold border border-purple-500/30">
+                      GridPulse-XAI v3.2
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
+
         </main>
 
       </div>
 
-      {/* Failover & Dispatch Modal */}
-      <FailoverModal
-        isOpen={isFailoverModalOpen}
-        onClose={() => setIsFailoverModalOpen(false)}
-        telemetry={telemetry}
-        gridTopology={gridTopology}
-        onExecuteInterlock={handleExecuteInterlock}
-        onSignoffDispatch={handleSignoffDispatch}
-        isExecuting={isInterlockExecuting}
-        signoffSuccess={signoffSuccess}
-      />
-
     </div>
   );
 }
+

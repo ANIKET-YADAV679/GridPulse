@@ -7,14 +7,20 @@
   color-scheme: dark;
 }
 
-/* Cyber dark scrollbar */
+body {
+  background-color: #070b14;
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
+
+/* Cyber dark command-center custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #090e1a;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -23,45 +29,65 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #06b6d4;
 }
 
-/* Subtle cyber grid background */
-.bg-cyber-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+/* Glassmorphic Cyber Card Helper */
+.cyber-card {
+  background: rgba(13, 21, 39, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(31, 46, 77, 0.8);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
-/* Animated radar pulse for critical nodes */
-@keyframes radar-pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+.cyber-card-glow {
+  background: rgba(13, 21, 39, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.2);
+}
+
+.cyber-card-danger {
+  background: rgba(26, 11, 23, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  box-shadow: 0 0 25px -4px rgba(244, 63, 94, 0.25);
+}
+
+/* Power flow dashed stroke animation for SLD / Topology */
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -24;
   }
-  70% {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);
+}
+
+.animate-power-flow {
+  stroke-dasharray: 6 4;
+  animation: flow-dash 1s linear infinite;
+}
+
+/* Radar ping and soft pulses */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes radar-ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
   }
   100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    transform: scale(2.6);
+    opacity: 0;
   }
 }
 
-.animate-radar {
-  animation: radar-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.animate-radar-ring {
+  animation: radar-ripple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
 
-/* Electrical transmission conduit pulse */
-@keyframes conduit-flow {
-  to {
-    stroke-dashoffset: -32;
-  }
-}
-
-.animate-conduit {
-  stroke-dasharray: 8 6;
-  animation: conduit-flow 1.2s linear infinite;
-}

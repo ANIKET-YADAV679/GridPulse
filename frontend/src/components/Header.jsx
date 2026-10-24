@@ -1,155 +1,160 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Clock,
+  Bell,
   Play,
   Pause,
   Zap,
   RotateCcw,
-  Bell,
-  Radio,
-  ShieldCheck,
-  ShieldAlert,
-  Flame,
-  GitFork
+  Sparkles,
+  ChevronDown
 } from 'lucide-react';
+import towersBg from '../assets/transmission_towers.jpg';
 
 export default function Header({
   telemetry,
   isPlaying,
   setIsPlaying,
-  onInjectDegradation,
+  onInjectFault,
   onReset,
-  isDegraded = false,
-  onOpenFailoverModal
+  playbackIndex = 0,
+  isCritical = false,
+  alertCount = 3
 }) {
-  const [timeString, setTimeString] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const day = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-      const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      setTimeString(`${day} | ${time}`);
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  const formattedDate = currentTime.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const formattedTime = currentTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
   return (
-    <header className="h-16 bg-[#020617]/90 border-b border-slate-800/80 px-6 flex items-center justify-between sticky top-0 z-30 select-none backdrop-blur-md">
+    <header className="relative w-full h-20 bg-[#090d19] border-b border-[#18233a] px-6 flex items-center justify-between select-none overflow-hidden z-30">
       
-      {/* Left: System Status & Clock */}
-      <div className="flex items-center gap-5">
-        
-        {/* System Online Pill */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs font-mono">
-          <span className={`w-2 h-2 rounded-full ${
-            isDegraded ? 'bg-rose-500 animate-ping' : 'bg-emerald-400 animate-pulse'
-          }`} />
-          <span className={isDegraded ? 'text-rose-400 font-semibold' : 'text-emerald-400 font-semibold'}>
-            {isDegraded ? 'Alert: Grid Stress' : 'System Online'}
-          </span>
+      {/* Background Graphic: Power Transmission Towers at Dusk with Glowing Electric Lines */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-35 overflow-hidden">
+        <img
+          src={towersBg}
+          alt="Power Grid Skyline"
+          className="w-full h-full object-cover object-center filter contrast-125 brightness-90"
+        />
+        {/* Cyber Neon Gradient Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#070b16] via-[#090e1f]/80 to-[#070b16]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#090e1f]/40 to-[#070b16]" />
+      </div>
+
+      {/* Brand & Tagline */}
+      <div className="relative z-10 flex items-center gap-3.5">
+        <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 via-teal-500 to-emerald-500 shadow-neon-cyan p-0.5">
+          <div className="w-full h-full bg-[#080f1e] rounded-[10px] flex items-center justify-center">
+            <Zap className="w-6 h-6 text-cyan-400 fill-cyan-400/30 filter drop-shadow-[0_0_8px_#00f5ff]" />
+          </div>
         </div>
 
-        {/* Real-time Clock */}
-        <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400 border-l border-slate-800 pl-4">
-          <Clock className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-slate-300 font-medium">
-            {timeString || '24 Oct 2026 | 11:15'}
-          </span>
-        </div>
-
-        {/* Substation Breadcrumb Badge */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-mono text-slate-500">
-          <span>REGION:</span>
-          <span className="text-cyan-400 font-semibold">NORTH-ZONE GRID (400/132 kV)</span>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5 font-sans">
+              <span>GridPulse</span>
+              <span className="text-cyan-400 font-semibold text-lg">AI</span>
+            </h1>
+          </div>
+          <p className="text-[11px] font-medium text-slate-300 tracking-normal flex items-center gap-1">
+            Detect Earlier. Explain Clearly. Fail Over Intelligently.
+          </p>
         </div>
       </div>
 
-      {/* Right: Simulation Controls & User Profile */}
-      <div className="flex items-center gap-4">
+      {/* Right Controls, Status, Time, Notifications, Operator Profile */}
+      <div className="relative z-10 flex items-center gap-5">
         
-        {/* Simulation Controls Toolbar */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shadow-lg">
-          
-          {/* Stream Toggle */}
+        {/* Interactive Simulation Controls (Pill Bar) */}
+        <div className="flex items-center gap-1.5 bg-[#0e172e]/90 backdrop-blur-md p-1 rounded-xl border border-cyan-500/25 shadow-lg">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            title={isPlaying ? "Pause SCADA Telemetry Stream" : "Start Live SCADA Stream"}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition active:scale-95 ${
+            title={isPlaying ? "Pause SCADA Telemetry Stream" : "Start Live SCADA Telemetry Stream"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95 ${
               isPlaying
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
-                : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                : 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/40'
             }`}
           >
             {isPlaying ? (
               <>
-                <Pause className="w-3 h-3 fill-current" />
+                <Pause className="w-3.5 h-3.5 fill-current" />
                 <span>Pause</span>
               </>
             ) : (
               <>
-                <Play className="w-3 h-3 fill-current text-cyan-400" />
-                <span>Stream</span>
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Simulate</span>
               </>
             )}
           </button>
 
-          {/* Inject Critical Degradation Button */}
           <button
-            onClick={onInjectDegradation}
-            title="Inject Thermal & Harmonic Degradation on Transformer T-248"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/40 transition active:scale-95 shadow-neon-rose/40"
+            onClick={onInjectFault}
+            title="Inject Thermal & Harmonic Grid Anomaly"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 transition active:scale-95"
           >
-            <Flame className="w-3.5 h-3.5 text-rose-400 animate-bounce" />
-            <span className="hidden sm:inline">Inject Critical Degradation</span>
-            <span className="sm:hidden">Fault</span>
+            <Zap className="w-3.5 h-3.5 fill-rose-400 text-rose-400" />
+            <span className="hidden sm:inline">Inject Fault</span>
           </button>
 
-          {/* Reset Baseline */}
           <button
             onClick={onReset}
-            title="Reset Simulation to Baseline Nominal State"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition active:scale-95"
+            title="Reset to Nominal Baseline"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition active:scale-95"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Failover Quick Access when Degraded */}
-        {isDegraded && (
-          <button
-            onClick={onOpenFailoverModal}
-            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white font-mono text-xs font-bold shadow-neon-amber animate-pulse"
-          >
-            <GitFork className="w-3.5 h-3.5" />
-            <span>Failover Interlock</span>
-          </button>
-        )}
-
-        {/* Notification Bell */}
-        <div className="relative">
-          <button
-            title="Active Grid Alerts"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition relative"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500" />
-          </button>
+        {/* System Online Status Indicator */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0d1c2e]/80 border border-emerald-500/30 text-xs font-medium text-emerald-300">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+          </span>
+          <span className="text-white font-medium text-xs">System Online</span>
         </div>
 
-        {/* User Profile Chip */}
-        <div className="flex items-center gap-3 pl-2 border-l border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-slate-950 font-black text-xs flex items-center justify-center shadow-neon-cyan">
+        {/* Live Date & Time */}
+        <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-300 border-l border-slate-700/60 pl-4 font-mono">
+          <span>{formattedDate}</span>
+          <span className="text-slate-400">{formattedTime}</span>
+        </div>
+
+        {/* Notification Bell with Badge */}
+        <div className="relative cursor-pointer hover:opacity-90 transition">
+          <button className="p-2 rounded-xl bg-[#0e172e] border border-slate-700/60 text-slate-300 hover:text-white transition">
+            <Bell className="w-4 h-4" />
+          </button>
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-neon-red">
+            {alertCount}
+          </span>
+        </div>
+
+        {/* User Profile Chip: Aniket Yadav - Operator */}
+        <div className="flex items-center gap-3 pl-1">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-sm flex items-center justify-center shadow-[0_0_12px_rgba(6,182,212,0.4)] border border-cyan-300/40">
             A
           </div>
-          <div className="hidden lg:flex flex-col text-left">
-            <span className="text-xs font-bold text-white leading-tight font-sans">
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-semibold text-white leading-tight">
               Aniket Yadav
             </span>
-            <span className="text-[10px] text-cyan-400 font-mono font-medium">
+            <span className="text-[10px] text-slate-400 font-medium">
               Operator
             </span>
           </div>
@@ -160,3 +165,4 @@ export default function Header({
     </header>
   );
 }
+
